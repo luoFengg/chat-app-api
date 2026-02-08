@@ -13,7 +13,9 @@ type Message struct {
 	ConversationID string         `gorm:"type:varchar(32);not null" json:"conversation_id"`
 	SenderID       string         `gorm:"type:varchar(32);not null" json:"sender_id"`
 	Content        string         `gorm:"type:text;not null" json:"content"`
+	Caption        *string        `gorm:"type:text" json:"caption,omitempty"`
 	Type           string         `gorm:"type:varchar(20);default:'text'" json:"type"`
+	IsEdited       bool           `gorm:"type:boolean;default:false" json:"is_edited"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

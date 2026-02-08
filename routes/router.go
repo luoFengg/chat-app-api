@@ -4,6 +4,7 @@ import (
 	"chatapp-api/config"
 	"chatapp-api/controllers/auth"
 	"chatapp-api/controllers/conversation"
+	"chatapp-api/controllers/message"
 	"chatapp-api/exceptions"
 	"chatapp-api/middleware"
 
@@ -11,7 +12,11 @@ import (
 )
 
 // SetupRouter
-func SetupRouter(config *config.Config, authController auth.AuthController, convController conversation.ConversationController) *gin.Engine {
+func SetupRouter(
+	config *config.Config, 
+	authController auth.AuthController, 
+	convController conversation.ConversationController,
+	messageController message.MessageController,) *gin.Engine {
 	// Create router
 	router := gin.Default()
 
@@ -44,7 +49,21 @@ func SetupRouter(config *config.Config, authController auth.AuthController, conv
 			conversationRoutes.POST("/:id/participants", convController.AddParticipants)
 			conversationRoutes.DELETE("/:id/leave", convController.LeaveConversation)
 			conversationRoutes.DELETE("/:id/participants/:userId", convController.KickParticipant)
-        }
+        
+			// Message routes (nested under conversations)
+			//POST & GET messages wihtin a conversation
+			conversationRoutes.POST("/:id/messages", messageController.SendMessage)
+			conversationRoutes.GET("/:id/messages", messageController.GetMessages)
+		}
+
+		// Message routes (direct - for single message opeations)
+		messageRoutes := v1.Group("/messages")
+		messageRoutes.Use(middleware.AuthMiddleware(config))
+		{
+			messageRoutes.GET("/:messageId", messageController.GetMessageByID)
+			messageRoutes.PUT("/:messageId", messageController.UpdateMessage)
+			messageRoutes.DELETE("/:messageId", messageController.DeleteMessage)
+		}
     }
 	return router
 }

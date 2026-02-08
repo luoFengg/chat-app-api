@@ -3,6 +3,7 @@ package message
 import (
 	"chatapp-api/models/domain"
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -54,6 +55,29 @@ func (repo *messageRepositoryImpl) FindByConversationID(ctx context.Context, con
 	return messages, nil
 }
 
+// FindByConversationIDWithCursor implements MessageRepository
+func (repo *messageRepositoryImpl) FindByConversationIDWithCursor(ctx context.Context, conversationID string, cursor *time.Time, limit int) ([]domain.Message, error) {
+	var messages []domain.Message
+
+	query := repo.db.WithContext(ctx).
+	Preload("Sender").
+	Where("conversation_id = ?", conversationID).
+	Order("created_at DESC").
+	Limit(limit)
+
+	// if cursor not nil, filter messages older than cursor
+	if cursor != nil {
+		query = query.Where("created_at < ?", cursor)
+	}
+
+	err := query.Find(&messages).Error
+	if err != nil {
+		return nil, err
+	}
+	
+	return messages, nil
+}
+
 // Update implements MessageRepository
 func (repo *messageRepositoryImpl) Update(ctx context.Context, message *domain.Message) error {
 	return repo.db.WithContext(ctx).Save(message).Error
@@ -78,4 +102,21 @@ func (repo *messageRepositoryImpl) CountByConversationID(ctx context.Context, co
 	}
 
 	return count, nil
+}
+
+// FindLastByConversationID implements MessageRepository
+func (repo *messageRepositoryImpl) FindLastByConversationID(ctx context.Context, conversationID string) (*domain.Message, error) {
+	var message domain.Message
+
+	err := repo.db.WithContext(ctx).
+	Preload("Sender").
+	Where("conversation_id = ?", conversationID).
+	Order("created_at DESC").
+	First(&message).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &message, nil
 }

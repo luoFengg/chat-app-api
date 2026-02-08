@@ -13,3 +13,5 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX idx_users_deleted_at ON users(deleted_at);
 CREATE INDEX idx_users_email ON users(email);
+
+--migrate -path apps/database/migrations -database "postgres://postgres:postgres123@localhost:5433/chatapp_db?sslmode=disable" up

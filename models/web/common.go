@@ -30,7 +30,7 @@ type CursorMeta struct {
 	PrevCursor *string `json:"prev_cursor,omitempty"`	
 }
 
-// CursorResponse fir Response with Cursor Pagination
+// CursorResponse for Response with Cursor Pagination
 type CursorResponse struct {
 	Success bool `json:"success"`
 	Message string `json:"message"`

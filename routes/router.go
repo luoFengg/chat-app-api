@@ -7,6 +7,7 @@ import (
 	"chatapp-api/controllers/message"
 	"chatapp-api/exceptions"
 	"chatapp-api/middleware"
+	"chatapp-api/websocket"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,7 +17,8 @@ func SetupRouter(
 	config *config.Config, 
 	authController auth.AuthController, 
 	convController conversation.ConversationController,
-	messageController message.MessageController,) *gin.Engine {
+	messageController message.MessageController,
+	hub *websocket.Hub) *gin.Engine {
 	// Create router
 	router := gin.Default()
 
@@ -64,6 +66,8 @@ func SetupRouter(
 			messageRoutes.PUT("/:messageId", messageController.UpdateMessage)
 			messageRoutes.DELETE("/:messageId", messageController.DeleteMessage)
 		}
+		// WebSocket routes
+		v1.GET("/ws", websocket.HandleWebSocket(hub, config))
     }
 	return router
 }

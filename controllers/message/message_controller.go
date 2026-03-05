@@ -18,4 +18,7 @@ type MessageController interface {
 
 	// DeleteMessage DELETE /messages/:messageId
 	DeleteMessage(ctx *gin.Context)
+
+	// GetMessageReceipts GET /messages/:messageId/receipts
+	GetMessageReceipts(ctx *gin.Context)
 }

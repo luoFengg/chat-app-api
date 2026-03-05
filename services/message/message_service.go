@@ -23,4 +23,7 @@ type MessageService interface {
 
 	// DeleteMessage deletes a message
 	DeleteMessage(ctx context.Context, userID, messageID string) error
+
+	// GetMessageReceipts returns all receipts for a message (who read, delivered, etc.)
+	GetMessageReceipts(ctx context.Context, userID, messageID string) ([]domain.MessageReceipt, error)
 }

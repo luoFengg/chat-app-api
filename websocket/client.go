@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 
@@ -67,6 +68,49 @@ func (client *Client) ReadPump() {
 
 		log.Printf("Received message from user %s: %s", client.userID, string(message))
 		// TODO: Handle incoming messages (typing indicator, read receipt, etc.)
+		// Parse JSON message from client
+		var wsMessage WSMessage
+		if err := json.Unmarshal(message, &wsMessage); err != nil {
+			log.Printf("Invalid message format from user %s: %v", client.userID, err)
+			continue // Skip message with incorrect formatting, continue reading the next message
+		}
+		
+		// Handle based on event type
+		switch wsMessage.Event{
+		case EventTypingStart, EventTypingStop:
+			// Forward typing events to other participants
+			client.hub.HandleTypingEvent(client.userID, wsMessage.ConversationID, wsMessage.Event)
+
+		case EventMessageRead:
+		// Client sends: {"event":"message_read", "conversation_id":"conv_xxx", "data":{"message_id":"msg_xxx"}}
+		dataMap, ok := wsMessage.Data.(map[string]interface{})
+		if !ok {
+			log.Printf("Invalid message_read data from user %s", client.userID)
+			break
+		}
+		messageID, ok := dataMap["message_id"].(string)
+		if !ok {
+			log.Printf("Missing message_id in message_read from user %s", client.userID)
+			break
+		}
+		client.hub.HandleMessageReadEvent(client.userID, wsMessage.ConversationID, messageID)
+		case EventMessageDelivered:
+		// Client sends: {"event":"message_delivered", "conversation_id":"conv_xxx", "data":{"message_id":"msg_xxx"}}
+		dataMap, ok := wsMessage.Data.(map[string]interface{})
+		if !ok {
+			log.Printf("Invalid message_delivered data from user %s", client.userID)
+			break
+		}
+		messageID, ok := dataMap["message_id"].(string)
+		if !ok {
+			log.Printf("Missing message_id in message_delivered from user %s", client.userID)
+			break
+		}
+		client.hub.HandleMessageDeliveredEvent(client.userID, wsMessage.ConversationID, messageID)
+
+		default:
+			log.Printf("Unknown event from user %s: %s", client.userID, wsMessage.Event)
+		}
 	}
 }
 

@@ -63,6 +63,7 @@ func SetupRouter(
 		messageRoutes.Use(middleware.AuthMiddleware(config))
 		{
 			messageRoutes.GET("/:messageId", messageController.GetMessageByID)
+			messageRoutes.GET("/:messageId/receipts", messageController.GetMessageReceipts)
 			messageRoutes.PUT("/:messageId", messageController.UpdateMessage)
 			messageRoutes.DELETE("/:messageId", messageController.DeleteMessage)
 		}

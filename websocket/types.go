@@ -11,6 +11,7 @@ const (
 	EventTypingStart = "typing_start"
 	EventTypingStop = "typing_stop"
 	EventMessageRead = "message_read"
+	EventMessageDelivered = "message_delivered"
 )
 
 // WSMessage is the standard WebSocket message format

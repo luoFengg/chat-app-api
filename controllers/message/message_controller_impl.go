@@ -198,3 +198,30 @@ func (controller *messageControllerImpl) DeleteMessage(ctx *gin.Context) {
 		Message: "Message deleted successfully",
 	})
 }
+
+// GetMessageReceipts handles GET /messages/:messageId/receipts
+func (controller *messageControllerImpl) GetMessageReceipts(ctx *gin.Context) {
+	// 1. Get userID from context (from JWT middleware)
+	userID, err := middleware.GetUserIDFromContext(ctx)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	// 2. Get message ID from URL parameter
+	messageID := ctx.Param("messageId")
+
+	// 3. Call service to get receipts
+	receipts, err := controller.messageService.GetMessageReceipts(ctx.Request.Context(), userID, messageID)
+	if err != nil {
+		ctx.Error(err)
+		return
+	}
+
+	// 4. Return response
+	ctx.JSON(http.StatusOK, web.ApiResponse{
+		Success: true,
+		Message: "Message receipts fetched successfully",
+		Data:    receipts,
+	})
+}

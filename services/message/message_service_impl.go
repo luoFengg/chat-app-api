@@ -6,8 +6,12 @@ import (
 	"chatapp-api/models/web"
 	conversationRepo "chatapp-api/repositories/conversation"
 	messageRepo "chatapp-api/repositories/message"
+	receiptRepo "chatapp-api/repositories/message_receipt"
+	"chatapp-api/websocket"
 	"context"
+	"encoding/json"
 	"errors"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -17,13 +21,22 @@ import (
 type messageServiceImpl struct {
 	messageRepo        messageRepo.MessageRepository
 	conversationRepo   conversationRepo.ConversationRepository
+	receiptRepo        receiptRepo.MessageReceiptRepository
+	hub                *websocket.Hub
 }
 
 // NewMessageService creates a new MessageService instance
-func NewMessageService(messageRepo messageRepo.MessageRepository, conversationRepo conversationRepo.ConversationRepository) MessageService {
+func NewMessageService(
+	messageRepo messageRepo.MessageRepository, 
+	conversationRepo conversationRepo.ConversationRepository, 
+	receiptRepo receiptRepo.MessageReceiptRepository, 
+	hub *websocket.Hub) MessageService {
 	return &messageServiceImpl{
 		messageRepo: messageRepo, 
-		conversationRepo: conversationRepo}
+		conversationRepo: conversationRepo,
+		receiptRepo: receiptRepo,
+		hub: hub,
+	}
 }
 
 // SendMessage implements MessageService interface
@@ -85,8 +98,62 @@ func (service *messageServiceImpl) SendMessage(ctx context.Context, senderID str
 		return nil, err
 	}
 
-	// 7. Reload message with sender info
-	return service.messageRepo.FindByID(ctx, message.ID)
+	// 7. Create receipts for all recipients (everyone except sender)
+	// Each recipient gets a receipt with initial status "sent"
+	var receipts []*domain.MessageReceipt
+	for _, participant := range conv.Participants {
+		// Sender doesn't need a rececipt for their own message
+		if participant.UserID != senderID {
+			receipts = append(receipts, &domain.MessageReceipt{
+				MessageID: message.ID,
+				UserID: participant.UserID,
+				Status: "sent",
+			})
+		}
+	} 
+
+	// Save all receipts in one batch query (for efficiency)
+	if len(receipts) > 0 {
+		if err := service.receiptRepo.CreateBatch(ctx, receipts); err != nil {
+			// Log error but don't fail the whole operation
+			// Receipt creation failure shouldn't block message delivery
+			log.Printf("Failed to create message receipts %s: %v", message.ID, err)
+		}
+	}
+
+	// 8. Reload message with sender info
+	// Retrieved the saved message complete with sender data
+	savedMessage, err := service.messageRepo.FindByID(ctx, message.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 8. Broadcast new message to all participants via WebSocket
+	// Send realtime notification to all online participants
+	if service.hub != nil {
+		// 8a. Wrap the message in standard WSMessage format
+		wsMessage := websocket.WSMessage{
+			Event: websocket.EventNewMessage, // Event type: "new_message"
+			ConversationID: savedMessage.ConversationID, // Destionation conversation ID
+			Data: savedMessage, // Complete message data
+		}
+
+		// 8b. Convert struct to JSON bytes to send via WebSocket
+		jsonData, err := json.Marshal(wsMessage)
+		if err == nil {
+			// 8c. Collcet all participants for this conversation
+			var participantIDs []string
+			for _, participant := range conv.Participants {
+				participantIDs = append(participantIDs, participant.UserID)
+			}
+
+			// 8d. Send to all online participants
+			service.hub.SendToUsers(participantIDs, jsonData)
+			log.Printf("Broadcasted new message to %d participants", len(participantIDs))
+		}
+	}
+	
+	return savedMessage, nil
 }
 
 // GetMessages implements MessageService
@@ -243,3 +310,30 @@ func (service *messageServiceImpl) DeleteMessage(ctx context.Context, userID, me
 	// 3. Delete the message
 	return service.messageRepo.Delete(ctx, message.ID)
 }
+
+// GetMessageReceipts implements MessageService
+// Returns all receipts for a message (only accessible by conversation participants)
+func (service *messageServiceImpl) GetMessageReceipts(ctx context.Context, userID, messageID string) ([]domain.MessageReceipt, error) {
+	// 1. Find the message
+	message, err := service.messageRepo.FindByID(ctx, messageID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, exceptions.NewNotFoundError("Message not found")
+		}
+		return nil, err
+	}
+
+	// 2. Validate: only the sender can view receipts
+	if message.SenderID != userID {
+		return nil, exceptions.NewForbiddenError("Only the message sender can view receipts")
+	}
+
+	// 3. Get all receipts for this message
+	receipts, err := service.receiptRepo.FindByMessageID(ctx, messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	return receipts, nil
+}
+

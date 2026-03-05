@@ -13,6 +13,7 @@ import (
 	messageController "chatapp-api/controllers/message"
 	conversationRepo "chatapp-api/repositories/conversation"
 	messageRepo "chatapp-api/repositories/message"
+	receiptRepo "chatapp-api/repositories/message_receipt"
 	userRepo "chatapp-api/repositories/user"
 	authService "chatapp-api/services/auth"
 	conversationService "chatapp-api/services/conversation"
@@ -31,19 +32,21 @@ func main() {
 	redisClient := redis.ConnectRedis(config)
 	_ = redisClient
 
-	// 4. Initialize WebSocket Hub
-	hub := websocket.NewHub()
-	go hub.Run()
-
-	// 5. Initialize repositories
+	
+	// 4. Initialize repositories
 	userRepository := userRepo.NewUserRepository(db)
 	conversationRepository := conversationRepo.NewConversationRepository(db)
 	messageRepository := messageRepo.NewMessageRepository(db)
+	messageReceiptRepository := receiptRepo.NewMessageReceiptRepository(db)
+	
+	// 5. Initialize WebSocket Hub
+	hub := websocket.NewHub(conversationRepository, userRepository, messageReceiptRepository)
+	go hub.Run()
 
 	// 6. Initialize services
 	authService := authService.NewAuthService(userRepository, config)
 	conversationService := conversationService.NewConversationService(conversationRepository, userRepository)
-	messageService := messageService.NewMessageService(messageRepository, conversationRepository)
+	messageService := messageService.NewMessageService(messageRepository, conversationRepository, messageReceiptRepository, hub)
 
 	// 7. Initialize controllers
 	authController := authController.NewAuthController(authService)

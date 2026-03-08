@@ -8,4 +8,5 @@ type AuthController interface {
 	Login(ctx *gin.Context)
 	RefreshToken(ctx *gin.Context)
 	GetMe(ctx *gin.Context)
+	UpdateProfile(ctx *gin.Context)
 }

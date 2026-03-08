@@ -65,3 +65,15 @@ func (e ForbiddenError) Error() string {
 	return e.Message
 }
 
+// InternalServerError for Server Error
+type InternalServerError struct {
+    Message string
+}
+
+func NewInternalServerError(message string) InternalServerError {
+    return InternalServerError{Message: message}
+}
+
+func (e InternalServerError) Error() string {
+    return e.Message
+}

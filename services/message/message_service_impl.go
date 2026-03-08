@@ -65,9 +65,11 @@ func (service *messageServiceImpl) SendMessage(ctx context.Context, senderID str
 
 	// 3. Validate message type
 	validTypes := map[string]bool{
-		"text": true,
+		"text":  true,
 		"image": true,
-		"file": true,
+		"file":  true,
+		"video": true,
+		"audio": true,
 	}
 
 	messageType := req.Type
@@ -76,7 +78,7 @@ func (service *messageServiceImpl) SendMessage(ctx context.Context, senderID str
 	}
 
 	if !validTypes[messageType] {
-		return nil, exceptions.NewBadRequestError("Invalid message type. Allowed: text, image, file")
+		return nil, exceptions.NewBadRequestError("Invalid message type. Allowed: text, image, file, video, audio")
 	}
 
 	// 4. Validate content based on type

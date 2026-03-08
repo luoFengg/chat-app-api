@@ -12,4 +12,5 @@ type AuthService interface {
 	Login(ctx context.Context, req *web.LoginRequest) (*web.AuthResponse, error)
 	RefreshToken(ctx context.Context, req *web.RefreshTokenRequest) (*web.TokenResponse, error)
 	GetUserByID(ctx context.Context, id string) (*domain.User, error)
+	UpdateProfile(ctx context.Context, userID string, req *web.UpdateProfileRequest) (*domain.User, error)
 }

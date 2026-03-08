@@ -145,3 +145,27 @@ func (authService *authServiceImpl) generateAuthResponse(user *domain.User) (*we
 		ExpiresAt: expiresAt,
 	}, nil
 }
+
+// UpdateProfile update a user's profile (name, avatar)
+func (service *authServiceImpl) UpdateProfile(ctx context.Context, userID string, req *web.UpdateProfileRequest) (*domain.User, error) {
+    // 1. Find existing user
+    user, err := service.userRepo.FindByID(ctx, userID)
+    if err != nil {
+        return nil, exceptions.NewNotFoundError("User not found")
+    }
+
+    // 2. Update only the fields that are provided
+    if req.Name != nil {
+        user.Name = *req.Name
+    }
+    if req.AvatarURL != nil {
+        user.AvatarURL = req.AvatarURL
+    }
+
+    // 3. Save to database
+    if err := service.userRepo.Update(ctx, user); err != nil {
+        return nil, exceptions.NewInternalServerError("Failed to update profile")
+    }
+
+    return user, nil
+}

@@ -11,6 +11,7 @@ import (
 	authController "chatapp-api/controllers/auth"
 	conversationController "chatapp-api/controllers/conversation"
 	messageController "chatapp-api/controllers/message"
+	uploadController "chatapp-api/controllers/upload"
 	conversationRepo "chatapp-api/repositories/conversation"
 	messageRepo "chatapp-api/repositories/message"
 	receiptRepo "chatapp-api/repositories/message_receipt"
@@ -18,6 +19,7 @@ import (
 	authService "chatapp-api/services/auth"
 	conversationService "chatapp-api/services/conversation"
 	messageService "chatapp-api/services/message"
+	uploadService "chatapp-api/services/upload"
 )
 
 func main() {
@@ -47,14 +49,16 @@ func main() {
 	authService := authService.NewAuthService(userRepository, config)
 	conversationService := conversationService.NewConversationService(conversationRepository, userRepository)
 	messageService := messageService.NewMessageService(messageRepository, conversationRepository, messageReceiptRepository, hub)
+	uploadService := uploadService.NewUploadService(config)
 
 	// 7. Initialize controllers
 	authController := authController.NewAuthController(authService)
 	conversationController := conversationController.NewConversationController(conversationService)
 	messageController := messageController.NewMessageController(messageService)
+	uploadController := uploadController.NewUploadController(uploadService)
 
 	// 8. Setup router
-	router := routes.SetupRouter(config, authController, conversationController, messageController, hub)
+	router := routes.SetupRouter(config, authController, conversationController, messageController, uploadController, hub)
 
 	// 9. Start server
 	log.Printf("⏳ Attempting to start server on port %s...", config.App.Port)

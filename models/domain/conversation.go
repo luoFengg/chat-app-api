@@ -11,6 +11,7 @@ import (
 type Conversation struct {
 	ID        string         `gorm:"type:varchar(32);primaryKey" json:"id"`
 	Name      *string        `gorm:"type:varchar(100)" json:"name,omitempty"`
+	AvatarURL *string        `gorm:"type:varchar(255)" json:"avatar_url,omitempty"`
 	Type      string         `gorm:"type:varchar(20);not null;default:'direct'" json:"type"`
 	CreatedBy string         `gorm:"type:varchar(32);not null" json:"created_by"`
 	CreatedAt time.Time      `json:"created_at"`

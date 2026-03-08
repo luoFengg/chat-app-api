@@ -176,8 +176,13 @@ func (service *conversationServiceImpl) UpdateConversation(ctx context.Context, 
 		return nil, exceptions.NewForbiddenError("Only admin can update conversation")
 	}
 
-	// 4. Update conversation name
-	conv.Name = &req.Name
+	// 4. Update the fields sent
+	if req.Name != nil {
+		conv.Name = req.Name
+	}
+	if req.AvatarURL != nil {
+		conv.AvatarURL = req.AvatarURL
+	}
 	
 	if err := service.convRepo.Update(ctx, conv); err != nil {
 		return nil, err
@@ -409,10 +414,14 @@ func (s *conversationServiceImpl) buildConversationResponse(conv *domain.Convers
 	}
 	// END OF LOOP
 
-	// For Group: use conversation name 
+	// For Group: use conversation name and avatar
 	if conv.Type == "group" && conv.Name != nil {
 		displayName = *conv.Name
 	}
+	if conv.Type == "group" && conv.AvatarURL != nil {
+		displayAvatar = conv.AvatarURL
+	}
+
 
 	// Build last message if any 
 	var lastMessage *web.MessageBriefResponse
@@ -465,6 +474,7 @@ func (service *conversationServiceImpl) buildConversationListItem(conv *domain.C
 	} else if conv.Type == "group" && conv.Name != nil {
 		// For Group: user conversation or group name
 		displayName = *conv.Name
+		displayAvatar = conv.AvatarURL
 	}
 
 	// Build last message (if any)

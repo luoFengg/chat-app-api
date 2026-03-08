@@ -14,6 +14,7 @@ type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
 	JWT      JWTConfig
+	Supabase SupabaseConfig
 }
 
 // AppConfig
@@ -46,6 +47,13 @@ type JWTConfig struct {
 	RefreshSecret string
 	AccessExpiryMins int
 	RefreshExpiryDays int
+}
+
+// SupabaseConfig for Supabase Storage
+type SupabaseConfig struct {
+	URL    string
+	Key    string
+	Bucket string
 }
 
 // LoadConfig to read .env dan return Config struct
@@ -92,6 +100,11 @@ func LoadConfig() *Config {
 			RefreshSecret: getEnv("JWT_REFRESH_SECRET", "refresh_secret"),
 			AccessExpiryMins: accessExpiry,
 			RefreshExpiryDays: refreshExpiry,
+		},
+		Supabase: SupabaseConfig{
+			URL:    getEnv("SUPABASE_URL", ""),
+			Key:    getEnv("SUPABASE_KEY", ""),
+			Bucket: getEnv("SUPABASE_BUCKET", "chat-media"),
 		},
 	}
 }

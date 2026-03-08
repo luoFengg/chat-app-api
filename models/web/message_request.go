@@ -5,7 +5,7 @@ type SendMessageRequest struct {
 	ConversationID string  `json:"-"` // Set from URL param, not from body
 	Content        string  `json:"content"`
 	Caption        *string `json:"caption,omitempty"`
-	Type           string  `json:"type" binding:"omitempty,oneof=text image file"`
+	Type           string  `json:"type" binding:"required,oneof=text image file video audio"`
 }
 
 // UpdateMessageRequest for Updating Message (Optional)

@@ -5,6 +5,7 @@ import (
 	"chatapp-api/controllers/auth"
 	"chatapp-api/controllers/conversation"
 	"chatapp-api/controllers/message"
+	"chatapp-api/controllers/upload"
 	"chatapp-api/exceptions"
 	"chatapp-api/middleware"
 	"chatapp-api/websocket"
@@ -18,6 +19,7 @@ func SetupRouter(
 	authController auth.AuthController, 
 	convController conversation.ConversationController,
 	messageController message.MessageController,
+	uploadController upload.UploadController,
 	hub *websocket.Hub) *gin.Engine {
 	// Create router
 	router := gin.Default()
@@ -38,6 +40,7 @@ func SetupRouter(
             // Protected (butuh token)
             authRoutes.Use(middleware.AuthMiddleware(config))
             authRoutes.GET("/me", authController.GetMe)
+			authRoutes.PUT("/me", authController.UpdateProfile)
         }
 
         // Conversation routes
@@ -67,6 +70,14 @@ func SetupRouter(
 			messageRoutes.PUT("/:messageId", messageController.UpdateMessage)
 			messageRoutes.DELETE("/:messageId", messageController.DeleteMessage)
 		}
+
+		// Upload routes
+		uploadRoutes := v1.Group("/upload")
+		uploadRoutes.Use(middleware.AuthMiddleware(config))
+		{
+			uploadRoutes.POST("", uploadController.UploadFile)
+		}
+
 		// WebSocket routes
 		v1.GET("/ws", websocket.HandleWebSocket(hub, config))
     }

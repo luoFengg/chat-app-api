@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"chatapp-api/exceptions"
 	"chatapp-api/middleware"
 	"chatapp-api/models/web"
 	authService "chatapp-api/services/auth"
@@ -140,3 +141,33 @@ func (controller *authControllerImpl) GetMe(ctx *gin.Context) {
 	})
 }
 
+// UpdateProfile handles PUT /api/v1/auth/me
+func (controller *authControllerImpl) UpdateProfile(ctx *gin.Context) {
+    // 1. Get userID from JWT middleware
+    userID, err := middleware.GetUserIDFromContext(ctx)
+    if err != nil {
+        ctx.Error(err)
+        return
+    }
+
+    // 2. Bind request body
+    var req web.UpdateProfileRequest
+    if err := ctx.ShouldBindJSON(&req); err != nil {
+        ctx.Error(exceptions.NewBadRequestError("Invalid request body"))
+        return
+    }
+
+    // 3. Call service
+    user, err := controller.authService.UpdateProfile(ctx.Request.Context(), userID, &req)
+    if err != nil {
+        ctx.Error(err)
+        return
+    }
+
+    // 4. Return response
+    ctx.JSON(http.StatusOK, web.ApiResponse{
+        Success: true,
+        Message: "Profile updated successfully",
+        Data:    user,
+    })
+}

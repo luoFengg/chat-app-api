@@ -44,6 +44,11 @@ func ErrorHandler() gin.HandlerFunc {
 					Success: false,
 					Message: e.Message,
 				})
+			case InternalServerError:
+				c.JSON(http.StatusInternalServerError, web.ApiResponse{
+					Success: false,
+					Message: e.Message,
+				})
 			default:
 				c.JSON(http.StatusInternalServerError, web.ApiResponse{
 					Success: false,

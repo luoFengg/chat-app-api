@@ -9,8 +9,10 @@ type CreateConversationRequest struct {
 
 // UpdateConversationRequest for Updating Conversation (rename group)
 type UpdateConversationRequest struct {
-	Name string `json:"name" binding:"required,min=1,max=100"`
+    Name      *string `json:"name,omitempty" binding:"omitempty,min=1,max=100"`
+    AvatarURL *string `json:"avatar_url,omitempty"`
 }
+
 
 // AddParticipantRequest for Adding Participant to Conversation
 type AddParticipantRequest struct {
